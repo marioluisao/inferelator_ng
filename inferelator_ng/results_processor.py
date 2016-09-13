@@ -6,8 +6,9 @@ import os
 import csv
 
 class ResultsProcessor:
+    #change threshold to 0
 
-    def __init__(self, betas, rescaled_betas, threshold=0.5):
+    def __init__(self, betas, rescaled_betas, threshold=0):
         self.betas = betas
         self.rescaled_betas = rescaled_betas
         self.threshold = threshold
@@ -31,7 +32,8 @@ class ResultsProcessor:
             self.betas_non_zero = self.betas_non_zero + np.absolute(np.sign(beta.values))
      
         #The following line returns 1 for all entries that appear in more than (or equal to) self.threshold fraction of bootstraps and 0 otherwise
-        thresholded_matrix = ((self.betas_non_zero / len(self.betas)) >= self.threshold).astype(int)
+        #Strictly bigger than zero since any non-zero beta should be count as 1 no matter the proportion. This is the original approach
+        thresholded_matrix = ((self.betas_non_zero / len(self.betas)) > self.threshold).astype(int)
         #Note that the current version is blind to the sign of those betas, so the betas_sign matrix is not used. Later we might want to modify this such that only same-sign interactions count.
         return thresholded_matrix
 
@@ -44,6 +46,8 @@ class ResultsProcessor:
         index_rows = np.where(gold_standard_filtered.abs().sum(axis=1) > 0)[0]
         gold_standard_nozero_cols = gold_standard_filtered[index_cols]
         gold_standard_nozero = gold_standard_nozero_cols.iloc[index_rows]
+        #use the absolute value to handle the -1s in the gs network
+        gold_standard_nozero = np.absolute(gold_standard_nozero)
         combined_confidences_nozero_cols = combined_confidences[index_cols]
         combined_confidences_nozero = combined_confidences_nozero_cols.iloc[index_rows]
         # rank from highest to lowest confidence
